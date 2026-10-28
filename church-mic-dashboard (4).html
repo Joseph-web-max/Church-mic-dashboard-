@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Church Microphone Dashboard</title>
+<style>
+:root{--bg:#f4f1ea;--card:#fff;--ink:#1d1b16;--mute:#6b665a;--line:#ddd7c8;--accent:#1f5f4a;--accent-ink:#fff;--danger:#b3261e;--warn:#9a6b00;--ok:#1f7a4d;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14130f;--card:#1f1d17;--ink:#f1ede2;--mute:#a39e8f;--line:#38352b;--accent:#4fb590;--accent-ink:#06201a;--danger:#ff6b60;--warn:#e0b04a;--ok:#5fd596}}
+:root[data-theme="dark"]{--bg:#14130f;--card:#1f1d17;--ink:#f1ede2;--mute:#a39e8f;--line:#38352b;--accent:#4fb590;--accent-ink:#06201a;--danger:#ff6b60;--warn:#e0b04a;--ok:#5fd596}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:960px;margin:0 auto;padding:20px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+h1{font-size:1.5rem;margin:0}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;border:2px solid var(--line);font-weight:700;background:var(--card)}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--mute)}
+.pill.live{border-color:var(--ok);color:var(--ok)}.pill.live .dot{background:var(--ok);animation:p 1s infinite}
+.pill.muted{border-color:var(--danger);color:var(--danger)}.pill.muted .dot{background:var(--danger)}
+@keyframes p{50%{opacity:.3}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+label{display:block;font-size:.85rem;font-weight:600;color:var(--mute);margin-bottom:6px}
+select{width:100%;padding:12px;font-size:1rem;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.btn{font:inherit;font-weight:800;font-size:1.25rem;min-height:84px;border-radius:16px;border:none;cursor:pointer;padding:12px;width:100%;background:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.alt{background:var(--card);color:var(--ink);border:3px solid var(--accent)}
+.btn.stop{background:var(--danger);color:#fff}
+.btn.mute{background:var(--danger);color:#fff;min-height:110px;font-size:1.6rem}
+.btn.mute.on{background:var(--card);color:var(--danger);border:4px solid var(--danger)}
+.btn small{display:block;font-weight:500;font-size:.8rem;opacity:.85;margin-top:2px}
+.btn:focus-visible,select:focus-visible,input:focus-visible{outline:4px solid var(--warn);outline-offset:2px}
+.meter{height:26px;border-radius:13px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.bar{height:100%;width:0;background:linear-gradient(90deg,var(--ok) 0 70%,var(--warn) 70% 90%,var(--danger) 90%);transition:width 60ms}
+input[type=range]{width:100%;height:44px;accent-color:var(--accent)}
+.vol{display:flex;align-items:center;gap:14px}.vol b{font-size:2rem;min-width:90px;text-align:right}
+.msg{font-size:.95rem;color:var(--mute);min-height:1.4em}.msg.err{color:var(--danger);font-weight:600}
+.warn{border-left:6px solid var(--warn);padding:10px 14px;background:var(--bg);border-radius:8px;font-size:.92rem}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.rec{font-variant-numeric:tabular-nums;font-weight:700}
+a.dl{display:inline-block;margin-top:8px;font-weight:700;color:var(--accent)}
+.fbwarn{border:3px solid var(--danger);background:var(--card);color:var(--danger);border-radius:14px;padding:14px 18px;margin-bottom:16px;font-size:1.05rem}
+.fbwarn[hidden]{display:none}
+.btn.alt.sel{background:var(--accent);color:var(--accent-ink)}
+.guide summary{font-size:1.15rem;font-weight:800;cursor:pointer;padding:4px 0}
+.guide h3{font-size:1rem;margin:16px 0 6px;color:var(--accent)}
+.guide ol,.guide ul{margin:0;padding-left:22px}.guide li{margin:5px 0}
+.guide .tip{background:var(--bg);border-radius:10px;padding:10px 14px;margin-top:12px;font-size:.92rem}
+body.big{font-size:22px}body.big .wrap{max-width:1400px}body.big h1{font-size:2.4rem}body.big .pill{font-size:1.4rem}body.big .btn{font-size:2rem;min-height:140px}body.big .btn.mute{font-size:2.6rem;min-height:180px}body.big .btn small{font-size:1rem}body.big .vol b{font-size:3rem}body.big .meter{height:44px}body.big select{font-size:1.2rem}body.big .msg{font-size:1.2rem}
+.tiny{font-size:.82rem;color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>⛪ Church Microphone Dashboard</h1>
+  <div class="row">
+    <button id="btnBig" type="button" class="pill" style="cursor:pointer;font:inherit;font-weight:700;color:var(--ink)">🖥 Big screen</button><button id="micPill" type="button" class="pill" style="cursor:pointer;font:inherit;font-weight:700;color:var(--ink)"><span class="dot"></span><span id="micTxt">Mic OFF</span></button>
+    <button id="airPill" type="button" class="pill" style="cursor:pointer;font:inherit;font-weight:700;color:var(--ink)"><span class="dot"></span><span id="airTxt">OFF AIR</span></button>
+  </div>
+</header>
+<div id="fb" class="fbwarn" role="alert" hidden></div>
+<div class="card"><label>Where is the sound going?</label>
+<div class="grid"><button id="modeLap" class="btn alt" type="button">💻 Laptop Speakers<small>No amplifier connected</small></button><button id="modeAmp" class="btn alt" type="button">🔌 Amplifier<small>Cable in AUX / LINE IN</small></button></div>
+<p id="modeTxt" class="tiny" style="margin:10px 0 0">Choose one before you start. Your choice is remembered.</p></div>
+
+<div class="card">
+  <div class="grid">
+    <div><label for="inSel">Microphone (input)</label><select id="inSel"><option value="">Click Activate Microphone first</option></select></div>
+    <div><label for="outSel">Speakers (laptop or amplifier)</label><select id="outSel"><option value="">Default output (laptop speakers or headphones)</option></select><button id="btnTest" type="button" class="btn alt" style="min-height:48px;font-size:1rem;margin-top:8px">🔊 Test speakers</button></div>
+  </div>
+  <p id="msg" class="msg" role="status"></p>
+</div>
+
+<div class="card">
+  <div class="grid">
+    <button id="btnMic" class="btn alt">1. Activate Microphone<small>Allow microphone access</small></button>
+    <button id="btnAir" class="btn" disabled>2. Start Preaching<small>Send voice to the speakers</small></button>
+  </div>
+</div>
+
+<div class="card">
+  <button id="btnMute" class="btn mute" disabled>🔇 EMERGENCY MUTE<small>Shortcut: press M or Esc</small></button>
+</div>
+
+<div class="card">
+  <label for="vol">Speaker volume</label>
+  <div class="vol"><input id="vol" type="range" min="0" max="150" value="80"><b id="volTxt">80%</b></div>
+  <label style="margin-top:14px">Microphone level</label>
+  <div class="meter"><div id="bar" class="bar"></div></div>
+  <div class="row" style="margin-top:14px">
+    <label style="margin:0;display:flex;gap:8px;align-items:center"><input id="nsChk" type="checkbox" checked style="width:22px;height:22px"> Noise reduction</label>
+    <label style="margin:0;display:flex;gap:8px;align-items:center"><input id="fbChk" type="checkbox" checked style="width:22px;height:22px"> Feedback guard (auto-lowers volume)</label>
+  </div>
+</div>
+
+<div class="card">
+  <div class="grid">
+    <button id="btnRec" class="btn alt" disabled>⏺ Record Sermon<small>Saves a file you can download</small></button>
+    <div><div class="rec" id="recTime">Not recording</div><div id="dlBox"></div></div>
+  </div>
+</div>
+
+<details class="card guide" open>
+<summary>📖 How to use this dashboard</summary>
+<h3>A. Using the laptop speakers (no amplifier)</h3>
+<ol>
+<li>Click <b>💻 Laptop Speakers</b>. The volume is limited to 60% for safety.</li>
+<li>Click <b>🎤 Turn Mic ON</b> and choose <b>Allow</b> when the browser asks for the microphone.</li>
+<li>In <b>Microphone</b>, choose your microphone. In <b>Speakers</b>, check it says Speakers (Realtek(R) Audio).</li>
+<li>Press <b>🔊 Test speakers</b>. If you hear the tone, the output works.</li>
+<li>Speak and watch the <b>Microphone level</b> bar move. Keep it mostly in the green.</li>
+<li>Click <b>📡 Go ON AIR</b> to send your voice to the speakers.</li>
+</ol>
+<h3>B. Using the church amplifier</h3>
+<ol>
+<li>Plug the laptop’s headphone jack into the amplifier’s <b>AUX / LINE IN</b> with an audio cable. Turn the amplifier volume down first.</li>
+<li>Click <b>🔌 Amplifier</b>, then <b>🎤 Turn Mic ON</b>.</li>
+<li>In <b>Speakers</b>, choose the headphone or line-out output, then press <b>Test speakers</b> and raise the amplifier volume slowly.</li>
+<li>Click <b>📡 Go ON AIR</b> and set the loudness with the <b>Speaker volume</b> slider.</li>
+</ol>
+<h3>During the service</h3>
+<ul>
+<li><b>EMERGENCY MUTE</b> (or press <b>M</b> or <b>Esc</b>) silences the speakers instantly. Press it again to unmute.</li>
+<li><b>📡 Go OFF AIR</b> stops sending your voice. <b>🎤 Turn Mic OFF</b> releases the microphone completely.</li>
+<li><b>⏺ Record Sermon</b> starts recording. Press it again to stop, then click the download link that appears.</li>
+<li>Keep the page open and the laptop plugged in. Do not close the browser tab while preaching.</li>
+</ul>
+<h3>If something is wrong</h3>
+<ul>
+<li><b>Level bar moves but no sound:</b> check the pill at the top says ON AIR, not MUTED. Press Test speakers, then check the Speakers list and the volume slider.</li>
+<li><b>Level bar does not move:</b> choose another microphone in the list, and check the microphone is on, charged and paired in Windows.</li>
+<li><b>Screeching (feedback):</b> lower the volume, move the microphone away from the speakers, or press Emergency Mute. The Feedback guard also lowers the volume by itself.</li>
+<li><b>Voice sounds thin or delayed:</b> this is common with Bluetooth microphones. A wired or USB microphone sounds better.</li>
+<li><b>Microphone blocked:</b> click the padlock next to the page address, allow the microphone, and reload the page.</li>
+</ul>
+<div class="tip"><b>Before every service:</b> arrive early, do a short test with someone listening at the back, and use Chrome or Edge.</div>
+</details>
+<div class="warn"><b>Using the laptop alone (no amplifier)?</b> Sound plays from the laptop speakers, or from headphones if plugged in. Use the Test speakers button to check the sound, and wear headphones while testing, because a microphone close to laptop speakers causes screeching.<br><b>Avoid feedback (screeching):</b> keep the microphone away from the speakers and start with the volume low, then raise it slowly. Connect the laptop’s headphone output to the amplifier’s AUX / LINE IN with a cable, and set Windows to use that output.<br><span class="tiny">Bluetooth microphones may sound thinner and add a small delay. For best quality use a wired or USB microphone, or the microphone’s own USB receiver.</span></div>
+</div>
+
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var ctx,stream,src,hp,comp,gain,muteG,analyser,recDest,recorder,chunks=[],recTimer,recStart;
+  var micOn=false,onAir=false,muted=false,meterRAF;
+
+  function say(t,err){var m=$('msg');m.textContent=t;m.className='msg'+(err?' err':'')}
+
+  function updateUI(){
+    $('micPill').className='pill'+(micOn?' live':'');$('micTxt').textContent=micOn?'Mic ON · tap to turn off':'Mic OFF · tap to turn on';
+    var ap=$('airPill');
+    if(onAir&&muted){ap.className='pill muted';$('airTxt').textContent='MUTED'}
+    else if(onAir){ap.className='pill live';$('airTxt').textContent='ON AIR · tap to stop'}
+    else{ap.className='pill';$('airTxt').textContent='OFF AIR · tap to go live'}
+    $('btnMute').disabled=!micOn;$('btnRec').disabled=!micOn;
+    $('btnMic').innerHTML=micOn?'🎤 Turn Mic OFF<small>Release the microphone</small>':'🎤 Turn Mic ON<small>Allow microphone access</small>';
+    $('btnMic').className='btn '+(micOn?'stop':'alt');
+    $('btnAir').innerHTML=onAir?'📡 Go OFF AIR<small>Stop sending to the speakers</small>':'📡 Go ON AIR<small>Send voice to the speakers</small>';
+    $('btnAir').className='btn'+(onAir?' stop':'');
+    $('btnMute').className='btn mute'+(muted?' on':'');
+    $('btnMute').innerHTML=muted?'🔊 UNMUTE<small>Microphone is muted</small>':'🔇 EMERGENCY MUTE<small>Shortcut: press M or Esc</small>';
+  }
+
+  async function listDevices(){
+    var d=await navigator.mediaDevices.enumerateDevices(),cur=stream&&stream.getAudioTracks()[0].getSettings().deviceId;
+    var i=$('inSel'),o=$('outSel');i.innerHTML='';o.innerHTML='<option value="">Default Windows output</option>';
+    d.forEach(function(x){
+      var op=document.createElement('option');op.value=x.deviceId;op.textContent=x.label||(x.kind+' '+x.deviceId.slice(0,6));
+      if(x.kind==='audioinput'){if(x.deviceId===cur)op.selected=true;i.appendChild(op)}
+      if(x.kind==='audiooutput'&&x.deviceId!=='default'){o.appendChild(op)}
+    });
+  }
+
+  function constraints(id){
+    var ns=$('nsChk').checked;
+    return {audio:{deviceId:id?{exact:id}:undefined,echoCancellation:false,noiseSuppression:ns,autoGainControl:false,channelCount:1}};
+  }
+
+  async function openMic(id){
+    if(stream){stream.getTracks().forEach(function(t){t.stop()})}
+    try{stream=await navigator.mediaDevices.getUserMedia(constraints(id))}catch(e){if(id&&(e.name==='OverconstrainedError'||e.name==='NotFoundError')){stream=await navigator.mediaDevices.getUserMedia(constraints(undefined))}else throw e}
+    if(!ctx){
+      ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
+      hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=90;
+      comp=ctx.createDynamicsCompressor();comp.threshold.value=-24;comp.knee.value=20;comp.ratio.value=4;comp.attack.value=0.005;comp.release.value=0.2;
+      gain=ctx.createGain();muteG=ctx.createGain();analyser=ctx.createAnalyser();analyser.fftSize=2048;
+      recDest=ctx.createMediaStreamDestination();
+      hp.connect(comp);comp.connect(analyser);
+      comp.connect(recDest);            // recording tap (always recorded, never muted by dashboard speaker routing)
+      comp.connect(gain);gain.connect(muteG);
+      setVol();
+    }
+    if(ctx.state==='suspended')await ctx.resume();
+    if(src)src.disconnect();
+    src=ctx.createMediaStreamSource(stream);src.connect(hp);
+    micOn=true;await listDevices();meter();
+  }
+
+  function setVol(){var v=$('vol').value/100;$('volTxt').textContent=$('vol').value+'%';if(gain)gain.gain.setTargetAtTime(v,ctx.currentTime,0.02)}
+
+  var fbBuf,fbCount=0,fbLast=-99,fbCool=0,fbT;
+  function showFeedback(hz,v){var b=$('fb');b.innerHTML='<b>⚠ Possible feedback at about '+hz+' Hz.</b> Volume lowered to '+v+'%. Move the microphone away from the speakers.';b.hidden=false;clearTimeout(fbT);fbT=setTimeout(function(){b.hidden=true},10000)}
+  function checkFeedback(){
+    if(!onAir||muted||!$('fbChk').checked){fbCount=0;return}
+    if(!fbBuf)fbBuf=new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(fbBuf);
+    var max=0,idx=0,sum=0,i;
+    for(i=4;i<fbBuf.length;i++){sum+=fbBuf[i];if(fbBuf[i]>max){max=fbBuf[i];idx=i}}
+    var avg=sum/(fbBuf.length-4);
+    if(max>200&&max>avg*6&&Math.abs(idx-fbLast)<=2){fbCount++}else{fbCount=0}
+    fbLast=idx;
+    if(fbCount>60&&Date.now()>fbCool){
+      fbCount=0;fbCool=Date.now()+4000;
+      var v=Math.max(0,Math.round($('vol').value*0.7));$('vol').value=v;setVol();if(mode)modeVol[mode]=v;saveSettings();
+      showFeedback(Math.round(idx*ctx.sampleRate/analyser.fftSize),v);
+    }
+  }
+  var wantIn='',wantOut='';
+  var mode='',modeOut={lap:'',amp:''},modeVol={lap:40,amp:70};
+  function saveSettings(){try{localStorage.setItem('churchMic',JSON.stringify({vol:$('vol').value,ns:$('nsChk').checked,fb:$('fbChk').checked,inId:wantIn,outId:wantOut,big:document.body.classList.contains('big'),mode:mode,mOut:modeOut,mVol:modeVol}))}catch(e){}}
+  function loadSettings(){try{return JSON.parse(localStorage.getItem('churchMic')||'null')}catch(e){return null}}
+  function meter(){
+    cancelAnimationFrame(meterRAF);
+    var buf=new Uint8Array(analyser.fftSize);
+    (function loop(){
+      analyser.getByteTimeDomainData(buf);var pk=0;
+      for(var i=0;i<buf.length;i++){var a=Math.abs(buf[i]-128)/128;if(a>pk)pk=a}
+      $('bar').style.width=Math.min(100,pk*140)+'%';checkFeedback();
+      meterRAF=requestAnimationFrame(loop);
+    })();
+  }
+
+  async function applySink(){
+    var id=$('outSel').value;
+    if(ctx&&ctx.setSinkId){try{await ctx.setSinkId(id||'')}catch(e){say('Could not switch output device: '+e.message,true)}}
+  }
+
+  async function activateMic(){
+    try{
+      say('Requesting microphone…');await openMic($('inSel').value||wantIn||undefined);
+      if(wantOut&&Array.prototype.some.call($('outSel').options,function(o){return o.value===wantOut}))$('outSel').value=wantOut;if(mode&&(mode==='lap'||!modeOut[mode])){var gg=guessOut(mode);if(gg){$('outSel').value=gg;wantOut=gg;modeOut[mode]=gg}}await applySink();updateUI();say('Microphone is ready. Check the level meter, then press Start Preaching.');
+    }catch(e){
+      say(e.name==='NotAllowedError'?'Microphone blocked. Allow microphone access in the browser address bar, then try again. If this page is embedded, open it in its own browser tab.':'Could not open microphone: '+e.message,true);
+    }
+  };
+
+  $('inSel').onchange=async function(){
+    if(!micOn)return;
+    try{await openMic($('inSel').value);say('Microphone changed.')}catch(e){say('Could not switch microphone: '+e.message,true)}
+  };
+  $('outSel').onchange=async function(){await applySink();say('Speaker output changed.')};
+  $('nsChk').onchange=async function(){if(micOn){try{await openMic($('inSel').value)}catch(e){say(e.message,true)}}};
+  $('vol').oninput=setVol;
+
+  $('btnAir').onclick=async function(){
+    if(!micOn){await activateMic();if(!micOn)return}
+    if(!micOn)return;
+    if(ctx.state==='suspended')await ctx.resume();
+    if(!onAir){
+      muteG.gain.value=muted?0:1;muteG.connect(ctx.destination);onAir=true;
+      say('You are live. Speak now. Raise the volume slowly if it is too quiet.');
+    }else{
+      try{muteG.disconnect(ctx.destination)}catch(e){}
+      onAir=false;say('Preaching stopped. Nothing is being sent to the speakers.');
+    }
+    updateUI();
+  };
+
+  function toggleMute(){
+    if(!micOn)return;
+    muted=!muted;muteG.gain.setTargetAtTime(muted?0:1,ctx.currentTime,0.01);
+    say(muted?'MUTED: the speakers are silent.':'Unmuted.');updateUI();
+  }
+  $('btnMute').onclick=toggleMute;
+  document.addEventListener('keydown',function(e){
+    var t=e.target.tagName;if(t==='SELECT'||t==='INPUT')return;
+    if(e.key==='m'||e.key==='M'||e.key==='Escape'){e.preventDefault();toggleMute()}
+  });
+
+  function fmt(s){var m=Math.floor(s/60),x=s%60;return (m<10?'0':'')+m+':'+(x<10?'0':'')+x}
+
+  $('btnRec').onclick=function(){
+    if(recorder&&recorder.state==='recording'){recorder.stop();return}
+    chunks=[];$('dlBox').innerHTML='';
+    var mt=['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus'].filter(function(t){return window.MediaRecorder&&MediaRecorder.isTypeSupported(t)})[0];
+    try{recorder=new MediaRecorder(recDest.stream,mt?{mimeType:mt}:{})}catch(e){say('Recording is not supported in this browser.',true);return}
+    recorder.ondataavailable=function(e){if(e.data.size)chunks.push(e.data)};
+    recorder.onstop=function(){
+      clearInterval(recTimer);
+      var blob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'}),url=URL.createObjectURL(blob);
+      var d=new Date(),n='sermon-'+d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)+'.webm';
+      $('dlBox').innerHTML='<a class="dl" href="'+url+'" download="'+n+'">⬇ Download recording ('+n+')</a>';
+      $('recTime').textContent='Recording saved';
+      $('btnRec').innerHTML='⏺ Record Sermon<small>Saves a file you can download</small>';$('btnRec').className='btn alt';
+      say('Recording finished. Download it below.');
+    };
+    recorder.start(1000);recStart=Date.now();
+    recTimer=setInterval(function(){$('recTime').textContent='● Recording '+fmt(Math.floor((Date.now()-recStart)/1000))},500);
+    $('btnRec').innerHTML='⏹ Stop Recording<small>Finish and save</small>';$('btnRec').className='btn stop';
+    say('Recording started.');
+  };
+
+  if(navigator.mediaDevices&&navigator.mediaDevices.addEventListener){
+    navigator.mediaDevices.addEventListener('devicechange',function(){if(micOn)listDevices().then(function(){var s=$('outSel');if(wantOut&&Array.prototype.some.call(s.options,function(o){return o.value===wantOut}))s.value=wantOut})});
+  }
+  var saved=loadSettings();
+  if(saved){
+    if(saved.vol!=null)$('vol').value=Math.min(100,+saved.vol||80);
+    $('nsChk').checked=saved.ns!==false;$('fbChk').checked=saved.fb!==false;
+    wantIn=saved.inId||'';wantOut=saved.outId||'';
+    if(saved.mOut)modeOut=saved.mOut;if(saved.mVol)modeVol=saved.mVol;if(saved.mode)setMode(saved.mode,true);
+    if(saved.big)document.body.classList.add('big');
+  }
+  setVol();
+  $('inSel').addEventListener('change',function(){wantIn=$('inSel').value;saveSettings()});
+  $('outSel').addEventListener('change',function(){wantOut=$('outSel').value;if(mode)modeOut[mode]=wantOut;saveSettings()});
+  $('nsChk').addEventListener('change',saveSettings);
+  $('fbChk').addEventListener('change',saveSettings);
+  $('vol').addEventListener('change',function(){if(mode)modeVol[mode]=+$('vol').value;saveSettings()});
+  $('btnBig').onclick=function(){document.body.classList.toggle('big');saveSettings()};
+  function deactivateMic(){
+    if(onAir){try{muteG.disconnect(ctx.destination)}catch(e){}onAir=false}
+    if(recorder&&recorder.state==='recording')recorder.stop();
+    if(src){src.disconnect();src=null}
+    if(stream){stream.getTracks().forEach(function(t){t.stop()});stream=null}
+    cancelAnimationFrame(meterRAF);$('bar').style.width='0%';
+    micOn=false;muted=false;if(muteG)muteG.gain.value=1;
+    say('Microphone is off.');updateUI();
+  }
+  $('btnMic').onclick=function(){if(micOn){deactivateMic()}else{activateMic()}};
+  $('modeLap').onclick=function(){setMode('lap')};
+  $('micPill').onclick=function(){$('btnMic').click()};
+  $('airPill').onclick=function(){$('btnAir').click()};
+  $('modeAmp').onclick=function(){setMode('amp')};
+  function guessOut(m){
+    var no=/bluetooth|hands-free|headset/i,tiers=m==='lap'?[/speaker.*realtek/i,/^(?!.*(headphone|headset|line|aux|mic|digital|hdmi)).*realtek/i,/speaker/i]:[/headphone|line|aux|jack/i],r='',opts=Array.prototype.slice.call($('outSel').options);tiers.some(function(re){return opts.some(function(o){if(o.value&&re.test(o.textContent)&&!no.test(o.textContent)){r=o.value;return true}return false})});
+    
+    return r;
+  }
+  function setMode(m,quiet){
+    mode=m;var s=$('outSel'),want=(m==='lap'?guessOut(m):'')||modeOut[m]||guessOut(m)||'';
+    var ok=!want||Array.prototype.some.call(s.options,function(o){return o.value===want});
+    s.value=ok?want:'';wantOut=want;
+    $('vol').max=m==='lap'?60:150;$('vol').value=Math.min(m==='lap'?60:100,modeVol[m]);setVol();
+    if(m==='lap')$('fbChk').checked=true;
+    applySink();
+    $('modeLap').className='btn alt'+(m==='lap'?' sel':'');$('modeAmp').className='btn alt'+(m==='amp'?' sel':'');
+    $('modeTxt').textContent=m==='lap'?'Laptop speaker mode (Realtek speakers): volume is limited to 60% and the feedback guard is on. Use headphones when testing.':'Amplifier mode: plug the cable into AUX / LINE IN. If you hear nothing, pick the headphone or line-out in the Speakers list.';
+    if(!quiet){say(m==='lap'?'Sound will play from the laptop speakers.':'Sound will go to the amplifier.');saveSettings()}
+  }
+  $('btnTest').onclick=async function(){
+    try{
+      var tc=new (window.AudioContext||window.webkitAudioContext)();
+      if(tc.setSinkId&&$('outSel').value){try{await tc.setSinkId($('outSel').value)}catch(e){}}
+      var o=tc.createOscillator(),g=tc.createGain(),lvl=0.25*($('vol').value/100);
+      o.frequency.value=440;g.gain.setValueAtTime(0,tc.currentTime);g.gain.linearRampToValueAtTime(lvl,tc.currentTime+0.05);g.gain.linearRampToValueAtTime(0,tc.currentTime+1);
+      o.connect(g);g.connect(tc.destination);o.start();o.stop(tc.currentTime+1.05);
+      o.onended=function(){tc.close()};say('Playing a test tone. If you hear it, the speakers are working.');
+    }catch(e){say('Could not play the test tone: '+e.message,true)}
+  };
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){say('This browser cannot access the microphone. Use Chrome or Edge on Windows.',true);$('btnMic').disabled=true}
+  updateUI();
+})();
+</script>
+</body>
+</html>
